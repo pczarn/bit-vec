@@ -93,6 +93,10 @@
 #[cfg(any(test, feature = "std"))]
 #[macro_use]
 extern crate std;
+
+#[macro_use]
+extern crate serde_derive;
+
 #[cfg(feature="std")]
 use std::vec::Vec;
 
@@ -212,6 +216,7 @@ static FALSE: bool = false;
 /// println!("{:?}", bv);
 /// println!("total bits set to true: {}", bv.iter().filter(|x| *x).count());
 /// ```
+#[derive(Serialize, Deserialize)]
 pub struct BitVec<B=u32> {
     /// Internal representation of the bit vector
     storage: Vec<B>,
@@ -1334,6 +1339,8 @@ impl<'a, B: BitBlock> ExactSizeIterator for Blocks<'a, B> {}
 
 #[cfg(test)]
 mod tests {
+    extern crate serde_json;
+    
     use super::{BitVec, Iter};
     use std::vec::Vec;
 
@@ -2132,6 +2139,20 @@ mod tests {
     fn iter() {
         let b = BitVec::with_capacity(10);
         let _a: Iter = b.iter();
+    }
+
+    #[test]
+    fn test_serialization() {
+        let bit_vec: BitVec = BitVec::new();
+        let serialized = serde_json::to_string(&bit_vec).unwrap();
+        let unserialized: BitVec = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(bit_vec, unserialized);
+        
+        let bools = vec![true, false, true, true];
+        let bit_vec: BitVec = bools.iter().map(|n| *n).collect();
+        let serialized = serde_json::to_string(&bit_vec).unwrap();
+        let unserialized = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(bit_vec, unserialized);
     }
 }
 
